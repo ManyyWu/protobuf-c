@@ -127,10 +127,14 @@ bool CGenerator::Generate(const FileDescriptor* file,
   //
   // for option --c_opt=disable_lowercase_name:
   // Identifier case will remain the same.
+  //
+  // for option --c_opt=no_enum_prefix:
+  // No prefix will be added to enum members, you will bear the consequences of the redefinition.
 
   for (auto &it : g_generator_options) {
     if (it.first != "dllexport_decl" &&
-        it.first != "disable_lowercase_name") {
+        it.first != "disable_lowercase_name" &&
+        it.first != "no_enum_prefix") {
       *error = "Unknown generator option: " + it.first;
       return false;
     }

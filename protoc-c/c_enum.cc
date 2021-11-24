@@ -96,7 +96,11 @@ void EnumGenerator::GenerateDefinition(io::Printer* printer) {
 
 
   vars["opt_comma"] = ",";
-  vars["prefix"] = FullNameToUpper(descriptor_->full_name(), descriptor_->file()) + "__";
+  if (g_generator_options.find("no_enum_prefix") != g_generator_options.end()) {
+    vars["prefix"] = "";
+  } else {
+    vars["prefix"] = FullNameToUpper(descriptor_->full_name(), descriptor_->file()) + "__";
+  }
   for (int i = 0; i < descriptor_->value_count(); i++) {
     vars["name"] = descriptor_->value(i)->name();
     vars["number"] = SimpleItoa(descriptor_->value(i)->number());
@@ -118,7 +122,7 @@ void EnumGenerator::GenerateDefinition(io::Printer* printer) {
     }
   }
 
-  printer->Print(vars, "  PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE($uc_name$)\n");
+  printer->Print(vars, "PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE($uc_name$)\n");
   printer->Outdent();
   printer->Print(vars, "} $classname$;\n");
 }

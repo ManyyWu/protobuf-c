@@ -76,7 +76,6 @@ ServiceGenerator::ServiceGenerator(const ServiceDescriptor* descriptor)
   vars_["cname"] = FullNameToC(descriptor_->full_name(), descriptor_->file());
   vars_["lcfullname"] = FullNameToLower(descriptor_->full_name(), descriptor_->file());
   vars_["ucfullname"] = FullNameToUpper(descriptor_->full_name(), descriptor_->file());
-  vars_["lcfullpadd"] = ConvertToSpaces(vars_["lcfullname"]);
   vars_["package"] = descriptor_->file()->package();
   auto it = g_generator_options.find("dllexport_decl");
   if (it == g_generator_options.end()) {
@@ -106,21 +105,19 @@ void ServiceGenerator::GenerateVfuncs(io::Printer* printer)
     const MethodDescriptor *method = descriptor_->method(i);
     std::string lcname = CamelToLower(method->name());
     vars_["method"] = lcname;
-    vars_["metpad"] = ConvertToSpaces(lcname);
     vars_["input_typename"] = FullNameToC(method->input_type()->full_name(), method->input_type()->file());
     vars_["output_typename"] = FullNameToC(method->output_type()->full_name(), method->output_type()->file());
     printer->Print(vars_,
-                   "  void (*$method$)($cname$_Service *service,\n"
-                   "         $metpad$  const $input_typename$ *input,\n"
-                   "         $metpad$  $output_typename$_Closure closure,\n"
-                   "         $metpad$  void *closure_data);\n");
+                   "  void (*$method$)($cname$_Service *service, "
+                   "const $input_typename$ *input, "
+                   "$output_typename$_Closure closure, "
+                   "void *closure_data);\n");
   }
   printer->Print(vars_,
 		 "};\n");
   printer->Print(vars_,
 		 "typedef void (*$cname$_ServiceDestroy)($cname$_Service *);\n"
-		 "void $lcfullname$__init ($cname$_Service *service,\n"
-		 "     $lcfullpadd$        $cname$_ServiceDestroy destroy);\n");
+		 "void $lcfullname$__init ($cname$_Service *service, $cname$_ServiceDestroy destroy);\n");
 }
 void ServiceGenerator::GenerateInitMacros(io::Printer* printer)
 {
@@ -133,9 +130,8 @@ void ServiceGenerator::GenerateInitMacros(io::Printer* printer)
     const MethodDescriptor *method = descriptor_->method(i);
     std::string lcname = CamelToLower(method->name());
     vars_["method"] = lcname;
-    vars_["metpad"] = ConvertToSpaces(lcname);
     printer->Print(vars_,
-                   ",\\\n      function_prefix__ ## $method$");
+                   ", function_prefix__ ## $method$");
   }
   printer->Print(vars_,
 		 "  }\n");
@@ -147,15 +143,13 @@ void ServiceGenerator::GenerateCallersDeclarations(io::Printer* printer)
     std::string lcname = CamelToLower(method->name());
     std::string lcfullname = FullNameToLower(descriptor_->full_name(), descriptor_->file());
     vars_["method"] = lcname;
-    vars_["metpad"] = ConvertToSpaces(lcname);
     vars_["input_typename"] = FullNameToC(method->input_type()->full_name(), method->input_type()->file());
     vars_["output_typename"] = FullNameToC(method->output_type()->full_name(), method->output_type()->file());
-    vars_["padddddddddddddddddd"] = ConvertToSpaces(lcfullname + "__" + lcname);
     printer->Print(vars_,
-                   "void $lcfullname$__$method$(ProtobufCService *service,\n"
-                   "     $padddddddddddddddddd$ const $input_typename$ *input,\n"
-                   "     $padddddddddddddddddd$ $output_typename$_Closure closure,\n"
-                   "     $padddddddddddddddddd$ void *closure_data);\n");
+                   "void $lcfullname$__$method$(ProtobufCService *service, "
+                   "const $input_typename$ *input, "
+                   "$output_typename$_Closure closure, "
+                   "void *closure_data);\n");
   }
 }
 
@@ -175,12 +169,9 @@ void ServiceGenerator::GenerateCFile(io::Printer* printer)
 void ServiceGenerator::GenerateInit(io::Printer* printer)
 {
   printer->Print(vars_,
-		 "void $lcfullname$__init ($cname$_Service *service,\n"
-		 "     $lcfullpadd$        $cname$_ServiceDestroy destroy)\n"
+		 "void $lcfullname$__init ($cname$_Service *service, $cname$_ServiceDestroy destroy)\n"
 		 "{\n"
-		 "  protobuf_c_service_generated_init (&service->base,\n"
-		 "                                     &$lcfullname$__descriptor,\n"
-		 "                                     (ProtobufCServiceDestroy) destroy);\n"
+		 "  protobuf_c_service_generated_init (&service->base, &$lcfullname$__descriptor, (ProtobufCServiceDestroy) destroy);\n"
 		 "}\n");
 }
 
@@ -269,17 +260,15 @@ void ServiceGenerator::GenerateCallersImplementations(io::Printer* printer)
     std::string lcname = CamelToLower(method->name());
     std::string lcfullname = FullNameToLower(descriptor_->full_name(), descriptor_->file());
     vars_["method"] = lcname;
-    vars_["metpad"] = ConvertToSpaces(lcname);
     vars_["input_typename"] = FullNameToC(method->input_type()->full_name(), method->input_type()->file());
     vars_["output_typename"] = FullNameToC(method->output_type()->full_name(), method->output_type()->file());
-    vars_["padddddddddddddddddd"] = ConvertToSpaces(lcfullname + "__" + lcname);
     vars_["index"] = SimpleItoa(i);
 
     printer->Print(vars_,
-                   "void $lcfullname$__$method$(ProtobufCService *service,\n"
-                   "     $padddddddddddddddddd$ const $input_typename$ *input,\n"
-                   "     $padddddddddddddddddd$ $output_typename$_Closure closure,\n"
-                   "     $padddddddddddddddddd$ void *closure_data)\n"
+                   "void $lcfullname$__$method$(ProtobufCService *service, "
+                   "const $input_typename$ *input, "
+                   "$output_typename$_Closure closure, "
+                   "void *closure_data)\n"
 		   "{\n"
 		   "  assert(service->descriptor == &$lcfullname$__descriptor);\n"
 		   "  service->invoke(service, $index$, (const ProtobufCMessage *) input, (ProtobufCClosure) closure, closure_data);\n"
