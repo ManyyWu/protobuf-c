@@ -96,28 +96,50 @@ void ServiceGenerator::GenerateMainHFile(io::Printer* printer)
 }
 void ServiceGenerator::GenerateVfuncs(io::Printer* printer)
 {
-  printer->Print(vars_,
-		 "typedef struct $cname$_Service $cname$_Service;\n"
-		 "struct $cname$_Service\n"
-		 "{\n"
-		 "  ProtobufCService base;\n");
+  if (g_generator_options.find("disable_c_style_name") == g_generator_options.end()) {
+    printer->Print(vars_,
+                   "typedef struct $cname$_Service $cname$_Service;\n"
+                   "struct $cname$_Service\n"
+                   "{\n"
+                   "  ProtobufCService base;\n");
+  } else {
+    printer->Print(vars_,
+                   "typedef struct $cname$Service $cname$Service;\n"
+                   "struct $cname$Service\n"
+                   "{\n"
+                   "  ProtobufCService base;\n");
+  }
   for (int i = 0; i < descriptor_->method_count(); i++) {
     const MethodDescriptor *method = descriptor_->method(i);
     std::string lcname = CamelToLower(method->name());
     vars_["method"] = lcname;
     vars_["input_typename"] = FullNameToC(method->input_type()->full_name(), method->input_type()->file());
     vars_["output_typename"] = FullNameToC(method->output_type()->full_name(), method->output_type()->file());
-    printer->Print(vars_,
+    if (g_generator_options.find("disable_c_style_name") == g_generator_options.end()) {
+      printer->Print(vars_,
                    "  void (*$method$)($cname$_Service *service, "
                    "const $input_typename$ *input, "
                    "$output_typename$_Closure closure, "
                    "void *closure_data);\n");
+    } else {
+      printer->Print(vars_,
+                     "  void (*$method$)($cname$Service *service, "
+                     "const $input_typename$ *input, "
+                     "$output_typename$Closure closure, "
+                     "void *closure_data);\n");
+    }
   }
   printer->Print(vars_,
 		 "};\n");
-  printer->Print(vars_,
-		 "typedef void (*$cname$_ServiceDestroy)($cname$_Service *);\n"
-		 "void $lcfullname$__init ($cname$_Service *service, $cname$_ServiceDestroy destroy);\n");
+  if (g_generator_options.find("disable_c_style_name") == g_generator_options.end()) {
+    printer->Print(vars_,
+                   "typedef void (*$cname$_ServiceDestroy)($cname$_Service *);\n"
+                   "void $lcfullname$__init ($cname$_Service *service, $cname$_ServiceDestroy destroy);\n");
+  } else {
+    printer->Print(vars_,
+                   "typedef void (*$cname$ServiceDestroy)($cname$Service *);\n"
+                   "void Init$cname$ ($cname$Service *service, $cname$ServiceDestroy destroy);\n");
+  }
 }
 void ServiceGenerator::GenerateInitMacros(io::Printer* printer)
 {
@@ -145,11 +167,19 @@ void ServiceGenerator::GenerateCallersDeclarations(io::Printer* printer)
     vars_["method"] = lcname;
     vars_["input_typename"] = FullNameToC(method->input_type()->full_name(), method->input_type()->file());
     vars_["output_typename"] = FullNameToC(method->output_type()->full_name(), method->output_type()->file());
-    printer->Print(vars_,
-                   "void $lcfullname$__$method$(ProtobufCService *service, "
-                   "const $input_typename$ *input, "
-                   "$output_typename$_Closure closure, "
-                   "void *closure_data);\n");
+    if (g_generator_options.find("disable_c_style_name") == g_generator_options.end()) {
+      printer->Print(vars_,
+                     "void $lcfullname$__$method$(ProtobufCService *service, "
+                     "const $input_typename$ *input, "
+                     "$output_typename$_Closure closure, "
+                     "void *closure_data);\n");
+    } else {
+      printer->Print(vars_,
+                     "void $cname$$method$(ProtobufCService *service, "
+                     "const $input_typename$ *input, "
+                     "$output_typename$Closure closure, "
+                     "void *closure_data);\n");
+    }
   }
 }
 
@@ -168,11 +198,19 @@ void ServiceGenerator::GenerateCFile(io::Printer* printer)
 }
 void ServiceGenerator::GenerateInit(io::Printer* printer)
 {
-  printer->Print(vars_,
-		 "void $lcfullname$__init ($cname$_Service *service, $cname$_ServiceDestroy destroy)\n"
-		 "{\n"
-		 "  protobuf_c_service_generated_init (&service->base, &$lcfullname$__descriptor, (ProtobufCServiceDestroy) destroy);\n"
-		 "}\n");
+  if (g_generator_options.find("disable_c_style_name") == g_generator_options.end()) {
+    printer->Print(vars_,
+                   "void $lcfullname$__init ($cname$_Service *service, $cname$_ServiceDestroy destroy)\n"
+                   "{\n"
+                   "  protobuf_c_service_generated_init (&service->base, &$lcfullname$__descriptor, (ProtobufCServiceDestroy) destroy);\n"
+                   "}\n");
+  } else {
+    printer->Print(vars_,
+                   "void Init$cname$ ($cname$Service *service, $cname$ServiceDestroy destroy)\n"
+                   "{\n"
+                   "  protobuf_c_service_generated_init (&service->base, &$lcfullname$__descriptor, (ProtobufCServiceDestroy) destroy);\n"
+                   "}\n");
+  }
 }
 
 struct MethodIndexAndName { unsigned i; const char *name; };
@@ -263,16 +301,27 @@ void ServiceGenerator::GenerateCallersImplementations(io::Printer* printer)
     vars_["input_typename"] = FullNameToC(method->input_type()->full_name(), method->input_type()->file());
     vars_["output_typename"] = FullNameToC(method->output_type()->full_name(), method->output_type()->file());
     vars_["index"] = SimpleItoa(i);
-
-    printer->Print(vars_,
-                   "void $lcfullname$__$method$(ProtobufCService *service, "
-                   "const $input_typename$ *input, "
-                   "$output_typename$_Closure closure, "
-                   "void *closure_data)\n"
+    if (g_generator_options.find("disable_c_style_name") == g_generator_options.end()) {
+      printer->Print(vars_,
+                     "void $lcfullname$__$method$(ProtobufCService *service, "
+                     "const $input_typename$ *input, "
+                     "$output_typename$_Closure closure, "
+                     "void *closure_data)\n"
 		   "{\n"
 		   "  assert(service->descriptor == &$lcfullname$__descriptor);\n"
 		   "  service->invoke(service, $index$, (const ProtobufCMessage *) input, (ProtobufCClosure) closure, closure_data);\n"
 		   "}\n");
+    } else {
+      printer->Print(vars_,
+                     "void $cname$$method$(ProtobufCService *service, "
+                     "const $input_typename$ *input, "
+                     "$output_typename$Closure closure, "
+                     "void *closure_data)\n"
+		   "{\n"
+		   "  assert(service->descriptor == &$lcfullname$__descriptor);\n"
+		   "  service->invoke(service, $index$, (const ProtobufCMessage *) input, (ProtobufCClosure) closure, closure_data);\n"
+		   "}\n");
+    }
   }
 }
 

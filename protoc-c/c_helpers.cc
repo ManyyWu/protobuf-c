@@ -195,9 +195,13 @@ std::string FullNameToLower(const std::string &full_name,
   std::vector<std::string> pieces;
   SplitStringUsing(OverrideFullName(full_name, file), ".", &pieces);
   std::string rv = "";
+  std::string delimiter = "__";
+  if (g_generator_options.find("disable_c_style_name") != g_generator_options.end()) {
+    delimiter = "";
+  }
   for (unsigned i = 0; i < pieces.size(); i++) {
     if (pieces[i] == "") continue;
-    if (rv != "") rv += "__";
+    if (rv != "") rv += delimiter;
     rv += CamelToLower(pieces[i]);
   }
   return rv;
@@ -207,9 +211,13 @@ std::string FullNameToUpper(const std::string &full_name,
   std::vector<std::string> pieces;
   SplitStringUsing(OverrideFullName(full_name, file), ".", &pieces);
   std::string rv = "";
+  std::string delimiter = "__";
+  if (g_generator_options.find("disable_c_style_name") != g_generator_options.end()) {
+    delimiter = "";
+  }
   for (unsigned i = 0; i < pieces.size(); i++) {
     if (pieces[i] == "") continue;
-    if (rv != "") rv += "__";
+    if (rv != "") rv += delimiter;
     rv += CamelToUpper(pieces[i]);
   }
   return rv;
@@ -219,9 +227,13 @@ std::string FullNameToC(const std::string &full_name,
   std::vector<std::string> pieces;
   SplitStringUsing(OverrideFullName(full_name, file), ".", &pieces);
   std::string rv = "";
+  std::string delimiter = "__";
+  if (g_generator_options.find("disable_c_style_name") != g_generator_options.end()) {
+    delimiter = "";
+  }
   for (unsigned i = 0; i < pieces.size(); i++) {
     if (pieces[i] == "") continue;
-    if (rv != "") rv += "__";
+    if (rv != "") rv += delimiter;
     rv += ToCamel(pieces[i]);
   }
   return rv;
@@ -296,7 +308,7 @@ std::set<std::string> kKeywords = MakeKeywordsMap();
 
 std::string FieldName(const FieldDescriptor* field) {
   std::string result;
-  if (g_generator_options.find("disable_lowercase_name") == g_generator_options.end()) {
+  if (g_generator_options.find("disable_c_style_name") == g_generator_options.end()) {
     result = ToLower(field->name());
   } else {
     result = field->name();
